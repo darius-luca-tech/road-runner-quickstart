@@ -33,6 +33,11 @@ public class MecanumDrivetrain {
     public static double MOVE_LEFT = -0.5;
     public static double OmegaSpeed = 0.7;
 
+    private static double FLPower;
+    private static double FRPower;
+    private static double BLPower;
+    private static double BRPower;
+
     public static Vector2d[] WHEEL_POSITION = { //wheel distance from the center (in xOy/inch)
             new Vector2d(6, 7.5),
             new Vector2d(-6, 7.5),
@@ -122,55 +127,22 @@ public class MecanumDrivetrain {
             }
         }
 
-
-        //Change polarities when testing teleop
-        public void SlideRight(int power) {
-            driveTrainMotors[0].setPower(-power);
-            driveTrainMotors[1].setPower(-power);
-            driveTrainMotors[2].setPower(power);
-            driveTrainMotors[3].setPower(power);
+        public void setMotorsPower(double FLPower, double FRPower, double BLPower, double BRPower) {
+            driveTrainMotors[0].setPower(FLPower);
+            driveTrainMotors[1].setPower(FRPower);
+            driveTrainMotors[2].setPower(BLPower);
+            driveTrainMotors[3].setPower(BRPower);
         }
 
-        public void SlideLeft(int power) {
-            driveTrainMotors[0].setPower(power);
-            driveTrainMotors[1].setPower(power);
-            driveTrainMotors[2].setPower(-power);
-            driveTrainMotors[3].setPower(-power);
+        public void CacheMotorPowers() {
+            lastFRPower = FRPower;
+            lastFLPower = FLPower;
+            lastBRPower = BRPower;
+            lastBLPower = BLPower;
         }
 
-        public void MoveForward(int power) {
-            driveTrainMotors[0].setPower(-power);
-            driveTrainMotors[1].setPower(power);
-            driveTrainMotors[2].setPower(power);
-            driveTrainMotors[3].setPower(-power);
-        }
-
-        public void MoveBackward(int power) {
-            driveTrainMotors[0].setPower(power);
-            driveTrainMotors[1].setPower(-power);
-            driveTrainMotors[2].setPower(-power);
-            driveTrainMotors[3].setPower(power);
-        }
-
-        public void TurnLeft(int power) {
-            driveTrainMotors[0].setPower(-power);
-            driveTrainMotors[1].setPower(power);
-            driveTrainMotors[2].setPower(-power);
-            driveTrainMotors[3].setPower(power);
-        }
-
-        public void TurnRight(int power) {
-            driveTrainMotors[0].setPower(power);
-            driveTrainMotors[1].setPower(-power);
-            driveTrainMotors[2].setPower(power);
-            driveTrainMotors[3].setPower(-power);
-        }
-
+        //robot centric movement
         public void setControls(double xdot, double ydot, double w) {
-            double FLPower;
-            double FRPower;
-            double BLPower;
-            double BRPower;
 
             if(!zeroStrafeCorrection) {
                 FLPower = ydot + xdot + w;
@@ -184,6 +156,7 @@ public class MecanumDrivetrain {
                 BRPower = xdot + w;
             }
 
+            ///!!!TEST THIS!!!!!!///
             double maxpower = Math.max(Math.abs(FRPower), Math.max(Math.abs(BLPower), Math.max(Math.abs(FLPower), Math.abs(BRPower))));
 
             if(maxpower > 1) {
@@ -194,13 +167,15 @@ public class MecanumDrivetrain {
             }
 
             if(xdot == 0 && ydot == 0 && w == 0) {
-                driveTrainMotors[0].setPower(FRPower);
-                driveTrainMotors[1].setPower(FLPower);
-                driveTrainMotors[2].setPower(BLPower);
-                driveTrainMotors[3].setPower(BRPower);
-
+                setMotorsPower(FLPower, FRPower, BLPower, BRPower);
+                CacheMotorPowers();
                 //cache the motors power
-                // to do: check the motor tolerance with the previous power
+                // to do: check the motor tolerance with the previous power(for accuracy purposes)
+
+            } else if (Math.abs(FRPower - lastFRPower) > motorUpdateTolerance || Math.abs(FLPower - lastFLPower) > motorUpdateTolerance
+                    || Math.abs(BRPower - lastBRPower) > motorUpdateTolerance || Math.abs(BLPower - lastBLPower) > motorUpdateTolerance) {
+                     setMotorsPower(FLPower, FRPower, BLPower, BRPower);
+                     CacheMotorPowers();
             }
         }
 }
